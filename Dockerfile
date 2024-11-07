@@ -1,33 +1,19 @@
-# Use a Go base image to build the Go server
-FROM golang:1.20 AS build
+# Use the basic Python image
+FROM python:3.9
+
+# Install pip, pytest, and any other required dependencies
+RUN pip install --upgrade pip && pip install pytest
+
+# Install Node.js and Jest if needed (if you have JavaScript tests)
+RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g jest
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the Go module files and download the dependencies
-COPY go.mod go.sum ./
-RUN go mod download
+# Copy the project files into the container
+COPY . /app
 
-# Copy the source code into the container
-COPY . .
-
-# Build the Go application
-RUN go build -o server .
-
-# Create a minimal image to run the Go server
-FROM debian:bullseye-slim
-
-# Install necessary dependencies (for example, curl if needed)
-RUN apt-get update && apt-get install -y curl
-
-# Set the working directory inside the container
-WORKDIR /app
-
-# Copy the built Go server from the build stage
-COPY go.mod go.sum ./
-
-# Expose the port the server will run on
-EXPOSE 8080
-
-# Run the Go server
-CMD ["./server"]
+# Default command to run pytest with a specific test file
+CMD ["sh", "-c", "pytest tests/${TEST_ID}.py"]
